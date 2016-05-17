@@ -15,15 +15,19 @@ I'm envisioning this project as a starting point for helping me manage that crap
 3. After you've created the app, select it, and go to the **Settings** tab.
 4. Find the **OAuth 2** subsection and in that section there should be something named **Generated access token** with a button labeled **Generate**.
 5. Press the **Generate** button which should yield a string of 64 characters.
-6. Place this string in your profiles.clj
+6. Create a file called **profiles.clj** (it will not be tracked by git) in the root dir of the project and add the following contents. Make sure to substitute in your access token.
 
-Now let's see if it worked. In the root of the project directory, start a REPL using Leiningen and try to execute the **(get-current-account)** fn. See below.
+```
+{:dev {:env {:access-token "YOUR_64_CHAR_GENERATED_DROPBOX_ACCESS_TOKEN_GOES_HERE"}}}
+```
+
+Now let's see if it worked. In the root of the project directory, start a REPL using Leiningen and try to execute the **(get-current-account)** function. See below.
 
 ```
 $ lein repl
 
 dropbox-repl.core=> (get-current-account)
-{:email "tismyemail@gmail.com", :account_type {:.tag "pro"}, :disabled false, :account_id "dbid:AACS-nNMCgsomedropboxidmkBeCNsx3Y", :is_paired false, :locale "en", :name {:given_name "Jeffrey", :surname "Simon", :familiar_name "Jeffrey", :display_name "Jeffrey Simon"}, :email_verified true, :referral_link "https://db.tt/tismyreferrallink", :country "US"}
+{:email "tismyemail@gmail.com", :account_type {:.tag "pro"}, :disabled false, :account_id "dbid:AACS-nNMCgsomedropboxidmkB9skqsx1Y", :is_paired false, :locale "en", :name {:given_name "Jeffrey", :surname "Simon", :familiar_name "Jeffrey", :display_name "Jeffrey Simon"}, :email_verified true, :referral_link "https://db.tt/tismyreferrallink", :country "US"}
 ```
 
 Hopefully, it worked for you!
