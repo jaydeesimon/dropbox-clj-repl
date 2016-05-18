@@ -20,29 +20,30 @@
     (last vals)))
 
 (def ^:private default-req
-  {:as :json
+  {:coerce :always ; exceptions will also be parsed as JSON
+   :as :json
    :throw-entire-message? true
    :headers {:authorization (str "Bearer " access-token)}})
 
-(defn- default-request
-  ([url] (default-request url {}))
+(defn- rpc-request
+  ([url] (rpc-request url {}))
   ([url params]
    (let [req {:content-type :json
               :body (if (seq params) (generate-string params) "null")}]
-     (:body (post url (merge* default-req req))))))
+     (post url (merge* default-req req)))))
 
-(defn- upload-request [file path]
+(defn- content-upload-request [file path]
   (let [url "https://content.dropboxapi.com/2/files/upload"
         req {:content-type "application/octet-stream"
              :body file
              :headers {:Dropbox-API-Arg (generate-string {:path path})}}]
-    (:body (post url (merge* default-req req)))))
+    (post url (merge* default-req req))))
 
 ;; REVIEW: I'm pretty sure the input stream from the response (:body resp)
 ;; will be closed after it's done reading but I should probably double-check.
 ;; If I include the input stream in the with-open, it throws an exception,
 ;; probably because the stream is closed twice.
-(defn- download-request [path dest-dir]
+(defn- content-download-request [path dest-dir]
   (let [url "https://content.dropboxapi.com/2/files/download"
         req {:as :stream
              :headers {:Dropbox-API-Arg (generate-string {:path path})}}
@@ -57,18 +58,18 @@
 ;; https://www.dropbox.com/developers/documentation/http/documentation#users-get_account
 
 (defn get-current-account []
-  (default-request "https://api.dropboxapi.com/2/users/get_current_account"))
+  (:body (rpc-request "https://api.dropboxapi.com/2/users/get_current_account")))
 
 (defn get-account [account-id]
-  (default-request "https://api.dropboxapi.com/2/users/get_account"
-                   {:account_id account-id}))
+  (:body (rpc-request "https://api.dropboxapi.com/2/users/get_account"
+                       {:account_id account-id})))
 
 (defn get-account-batch [account-ids]
-  (default-request "https://api.dropboxapi.com/2/users/get_account_batch"
-                   {:account_ids account-ids}))
+  (:body (rpc-request "https://api.dropboxapi.com/2/users/get_account_batch"
+                       {:account_ids account-ids})))
 
 (defn get-space-usage []
-  (default-request "https://api.dropboxapi.com/2/users/get_space_usage"))
+  (:body (rpc-request "https://api.dropboxapi.com/2/users/get_space_usage")))
 
 ;;;;;;;;;;;;;;;;;;;; FILES-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
 ;; https://www.dropbox.com/developers/documentation/http/documentation#files-copy
@@ -83,12 +84,12 @@
   ([path] (list-folder path {}) )
   ([path optional]
    (let [params (merge {:path (sanitize-for-list path)} optional)]
-     (default-request "https://api.dropboxapi.com/2/files/list_folder"
-                      params))))
+     (:body (rpc-request "https://api.dropboxapi.com/2/files/list_folder"
+                          params)))))
 
 (defn list-folder-continue [cursor]
-  (default-request "https://api.dropboxapi.com/2/files/list_folder/continue"
-                   {:cursor cursor}))
+  (:body (rpc-request "https://api.dropboxapi.com/2/files/list_folder/continue"
+                       {:cursor cursor})))
 
 (defn list-entries-lazy
   "Lazily returns the entries given a path. The sequence
@@ -110,39 +111,64 @@
     (take-while some? (list-entries-lazy path optional))))
 
 (defn copy [from-path to-path]
-  (default-request "https://api.dropboxapi.com/2/files/copy"
-                   {:from_path from-path
-                    :to_path to-path}))
+  (:body (rpc-request "https://api.dropboxapi.com/2/files/copy"
+                       {:from_path from-path
+                        :to_path   to-path})))
 
 (defn create-folder [path]
-  (default-request "https://api.dropboxapi.com/2/files/create_folder"
-                   {:path path}))
+  (:body (rpc-request "https://api.dropboxapi.com/2/files/create_folder"
+                       {:path path})))
 
 (defn delete [path]
-  (default-request "https://api.dropboxapi.com/2/files/delete"
-                   {:path path}))
+  (:body (rpc-request "https://api.dropboxapi.com/2/files/delete"
+                       {:path path})))
 
 (defn move [from-path to-path]
-  (default-request "https://api.dropboxapi.com/2/files/move"
-                   {:from_path from-path
-                    :to_path to-path}))
+  (:body (rpc-request "https://api.dropboxapi.com/2/files/move"
+                       {:from_path from-path
+                        :to_path   to-path})))
 
 (defn search
   ([path query] (search path query {}))
   ([path query optional]
    (let [params (merge {:path path :query query} optional)]
-     (default-request "https://api.dropboxapi.com/2/files/search"
-                      params))))
+     (:body (rpc-request "https://api.dropboxapi.com/2/files/search"
+                          params)))))
 
 (defn get-metadata
   ([path] (get-metadata path {}))
   ([path optional]
    (let [params (merge {:path path} optional)]
-     (default-request "https://api.dropboxapi.com/2/files/get_metadata"
-                      params))))
+     (:body (rpc-request "https://api.dropboxapi.com/2/files/get_metadata"
+                          params)))))
 
 (defn upload [file path]
-  (upload-request(io/as-file file) path))
+  (:body (content-upload-request (io/as-file file) path)))
 
 (defn download [path dest-dir]
-  (download-request path dest-dir))
+  (content-download-request path dest-dir))
+
+;;;;;;;;;;;;;;;;;;;; SHARING-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
+;; https://www.dropbox.com/developers/documentation/http/documentation#sharing-add_folder_member
+
+(defn get-shared-links
+  ([] (get-shared-links ""))
+  ([path] (:body (rpc-request "https://api.dropboxapi.com/2/sharing/get_shared_links" {:path path}))))
+
+(defn revoke-shared-link [url]
+  (rpc-request "https://api.dropboxapi.com/2/sharing/revoke_shared_link"
+                {:url url}))
+
+(defn get-shared-link-metadata
+  ([url] (get-shared-link-metadata url {}))
+  ([url optional]
+   (:body (rpc-request "https://api.dropboxapi.com/2/sharing/get_shared_link_metadata"
+                        (merge {:url url} optional)))))
+
+;;;;;;;;;;;;;;;;;;;; USEFUL FNS ;;;;;;;;;;;;;;;;;;;;;;
+(defn tag= [tag]
+  (fn [e]
+    (= (:.tag e) (name tag))))
+
+(defn name-from-path [path]
+  (last (str/split path #"/")))
