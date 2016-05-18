@@ -32,11 +32,10 @@
               :body (if (seq params) (generate-string params) "null")}]
      (post url (merge* default-req req)))))
 
-(defn- content-upload-request [file path]
-  (let [url "https://content.dropboxapi.com/2/files/upload"
-        req {:content-type "application/octet-stream"
+(defn- content-upload-request [url file params]
+  (let [req {:content-type "application/octet-stream"
              :body file
-             :headers {:Dropbox-API-Arg (generate-string {:path path})}}]
+             :headers {:Dropbox-API-Arg (generate-string params)}}]
     (post url (merge* default-req req))))
 
 ;; REVIEW: I'm pretty sure the input stream from the response (:body resp)
@@ -73,6 +72,19 @@
 
 ;;;;;;;;;;;;;;;;;;;; FILES-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
 ;; https://www.dropbox.com/developers/documentation/http/documentation#files-copy
+
+(defn- offsets [files]
+  (loop [lengths (map #(.length %) files)
+         offsets []
+         cur-offset 0]
+    (if (not (seq lengths))
+      offsets
+      (recur (rest lengths)
+             (conj offsets cur-offset)
+             (+' cur-offset (first lengths))))))
+
+(defn- upload-offsets [files]
+  (partition 2 (interleave (offsets files) files)))
 
 (defn- sanitize-for-list [path]
   (cond (= "/" path) ""
@@ -143,10 +155,33 @@
                           params)))))
 
 (defn upload [file path]
-  (:body (content-upload-request (io/as-file file) path)))
+  (:body (content-upload-request
+           "https://content.dropboxapi.com/2/files/upload"
+           (io/as-file file)
+           {:path path})))
 
 (defn download [path dest-dir]
   (content-download-request path dest-dir))
+
+(defn upload-start [file]
+  (:body (content-upload-request
+           "https://content.dropboxapi.com/2/files/upload_session/start"
+           (io/as-file file)
+           {})))
+
+(defn upload-append [file session-id offset]
+  (content-upload-request
+    "https://content.dropboxapi.com/2/files/upload_session/append_v2"
+    (io/as-file file)
+    {:cursor {:session_id session-id :offset offset}}))
+
+(defn upload-finish [file session-id offset path optional]
+  (:body (content-upload-request
+           "https://content.dropboxapi.com/2/files/upload_session/finish"
+           (io/as-file file)
+           (merge* {:cursor {:session_id session-id :offset offset}
+                    :commit {:path path}}
+                   optional))))
 
 ;;;;;;;;;;;;;;;;;;;; SHARING-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
 ;; https://www.dropbox.com/developers/documentation/http/documentation#sharing-add_folder_member
@@ -172,3 +207,5 @@
 
 (defn name-from-path [path]
   (last (str/split path #"/")))
+
+
