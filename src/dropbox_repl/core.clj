@@ -5,7 +5,8 @@
             [clj-http.client :refer [post]]
             [cheshire.core :refer [parse-string generate-string]]
             [clojure.walk :refer [keywordize-keys]])
-  (:gen-class))
+  (:gen-class)
+  (:import (java.io File RandomAccessFile)))
 
 ;;; Follow the instructions in the Github page on how
 ;;; to generate an access token for your Dropbox REPL.
@@ -182,6 +183,38 @@
            (merge* {:cursor {:session_id session-id :offset offset}
                     :commit {:path path}}
                    optional))))
+
+(defn- MB [n]
+  (* n 1048576))
+
+(defn byte-ranges [start end step]
+  (partition 2 1 (let [r (range start end step)]
+                   (if (< (last r) end)
+                     (concat r [end])
+                     r))))
+
+(defn write-file-parts [^File file]
+  (let [ranges (byte-ranges 0 (.length file) (MB 10))]
+    (with-open [raf (RandomAccessFile. file "r")]
+      (doall (map-indexed (fn [i [start end]]
+                            (let [file-part (io/file (.getParent file) (str "part-" (format "%03d" i) "-" (str start)))
+                                  buf (byte-array (- end start))]
+                              (with-open [os (io/output-stream file-part)]
+                                (.seek raf start)
+                                (.read raf buf)
+                                (.write os buf)
+                                {:file-part file-part :offset start})))
+                          ranges)))))
+
+;; Assert that there's at least two parts. You can't use this if there isn't.
+(defn upload-file-parts [path file-parts]
+  (let [{:keys [session_id]} (upload-start (:file-part (first file-parts)))
+        num-parts (count (rest file-parts))]
+    (last (map-indexed (fn [i {:keys [file-part offset]}]
+                         (if (not= (inc i) num-parts)
+                           (upload-append file-part session_id offset)
+                           (upload-finish file-part session_id offset path {})))
+                       (rest file-parts)))))
 
 ;;;;;;;;;;;;;;;;;;;; SHARING-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
 ;; https://www.dropbox.com/developers/documentation/http/documentation#sharing-add_folder_member
