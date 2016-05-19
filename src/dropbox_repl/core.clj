@@ -144,7 +144,7 @@
      (:body (rpc-request "https://api.dropboxapi.com/2/files/get_metadata"
                           params)))))
 
-(defn upload-one [file path]
+(defn upload-whole [file path]
   (:body (content-upload-request
            "https://content.dropboxapi.com/2/files/upload"
            (io/as-file file)
@@ -232,7 +232,7 @@
 
 (defn upload [file path]
   (if (< (.length file) (MB 150))
-    (upload-one file path)
+    (upload-whole file path)
     (upload-parts file path)))
 
 ;;;;;;;;;;;;;;;;;;;; SHARING-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
