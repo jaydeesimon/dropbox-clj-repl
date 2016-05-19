@@ -76,19 +76,6 @@
 ;;;;;;;;;;;;;;;;;;;; FILES-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
 ;; https://www.dropbox.com/developers/documentation/http/documentation#files-copy
 
-(defn- offsets [files]
-  (loop [lengths (map #(.length %) files)
-         offsets []
-         cur-offset 0]
-    (if (not (seq lengths))
-      offsets
-      (recur (rest lengths)
-             (conj offsets cur-offset)
-             (+' cur-offset (first lengths))))))
-
-(defn- upload-offsets [files]
-  (partition 2 (interleave (offsets files) files)))
-
 (defn- sanitize-for-list [path]
   (cond (= "/" path) ""
         (= "" path) ""
@@ -209,14 +196,20 @@
                           ranges)))))
 
 ;; Assert that there's at least two parts. You can't use this if there isn't.
-(defn- upload-file-parts [file-parts path]
-  (let [{:keys [session_id]} (upload-start (:file-part (first file-parts)))
-        num-parts (count (rest file-parts))]
-    (last (map-indexed (fn [part-num {:keys [file-part offset]}]
-                         (if (not= (inc part-num) num-parts)
-                           (upload-append file-part session_id offset)
-                           (upload-finish file-part session_id offset path {})))
-                       (rest file-parts)))))
+(defn- upload-file-parts
+  ([file-parts path] (upload-file-parts file-parts path (fn [& args])))
+  ([file-parts path progress-fn]
+   (let [{:keys [session_id]} (upload-start (:file-part (first file-parts)))
+         _ (progress-fn session_id 0 (count file-parts))
+         num-parts (count (rest file-parts))]
+     (last (map-indexed (fn [part-num {:keys [file-part offset]}]
+                          (let [upload-result (if (not= (inc part-num) num-parts)
+                                                (upload-append file-part session_id offset)
+                                                (upload-finish file-part session_id offset path {}))]
+                            (do
+                              (progress-fn session_id (inc part-num) (count file-parts))
+                              upload-result)))
+                        (rest file-parts))))))
 
 (defn- create-temp-dir [prefix]
   (.toFile (Files/createTempDirectory prefix (into-array FileAttribute []))))
@@ -225,7 +218,11 @@
   (reduce #(and %1 %2)
           (map #(.delete %) (reverse (file-seq dir)))))
 
-(defn- upload-parts [file path]
+(defn- upload-parts
+  "Break a file into 10 MB parts and upload them.
+  Why 10 MB? I'm going for something that is somewhat
+  large but will not cause an OutOfMemory exception."
+  [file path]
   (let [work-dir (create-temp-dir "dropbox-repl")]
     (try
       (-> (write-file-parts file work-dir 10)
