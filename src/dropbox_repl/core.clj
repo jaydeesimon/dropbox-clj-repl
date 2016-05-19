@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [environ.core :refer [env]]
+            [clj-time.format :as tf]
             [clj-http.client :refer [post]]
             [cheshire.core :refer [parse-string generate-string]]
             [clojure.walk :refer [keywordize-keys]])
@@ -93,6 +94,17 @@
   (:body (rpc-request "https://api.dropboxapi.com/2/files/list_folder/continue"
                        {:cursor cursor})))
 
+(defn enhance-timestamps [entry & time-keywords]
+  (reduce (fn [entry time-key]
+            (let [dt (tf/parse (time-key entry))]
+              (assoc entry (keyword (str (name time-key) "_dt")) dt)))
+          entry
+          time-keywords))
+
+(defn- enhance-entry [entry]
+  (-> entry
+      (enhance-timestamps :client_modified :server_modified)))
+
 ;; Hmm, don't think this is actually lazy...
 (defn list-entries-lazy
   "Lazily returns the entries given a path. The sequence
@@ -111,7 +123,8 @@
 (defn list-entries
   ([path] (list-entries path {:recursive true}))
   ([path optional]
-    (take-while some? (list-entries-lazy path optional))))
+   (->> (take-while some? (list-entries-lazy path optional))
+        (map enhance-entry))))
 
 (defn copy [from-path to-path]
   (:body (rpc-request "https://api.dropboxapi.com/2/files/copy"
