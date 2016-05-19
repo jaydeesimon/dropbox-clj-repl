@@ -93,7 +93,7 @@
   (:body (rpc-request "https://api.dropboxapi.com/2/files/list_folder/continue"
                        {:cursor cursor})))
 
-;; Hmm, don't this is actually lazy...
+;; Hmm, don't think this is actually lazy...
 (defn list-entries-lazy
   "Lazily returns the entries given a path. The sequence
   is terminated by nil so to get all of the entries you
