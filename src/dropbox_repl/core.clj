@@ -6,7 +6,9 @@
             [cheshire.core :refer [parse-string generate-string]]
             [clojure.walk :refer [keywordize-keys]])
   (:gen-class)
-  (:import (java.io File RandomAccessFile)))
+  (:import (java.io File RandomAccessFile)
+           (java.nio.file.attribute FileAttribute)
+           (java.nio.file Files)))
 
 ;;; Follow the instructions in the Github page on how
 ;;; to generate an access token for your Dropbox REPL.
@@ -155,7 +157,7 @@
      (:body (rpc-request "https://api.dropboxapi.com/2/files/get_metadata"
                           params)))))
 
-(defn upload [file path]
+(defn upload-one [file path]
   (:body (content-upload-request
            "https://content.dropboxapi.com/2/files/upload"
            (io/as-file file)
@@ -164,19 +166,19 @@
 (defn download [path dest-dir]
   (content-download-request path dest-dir))
 
-(defn upload-start [file]
+(defn- upload-start [file]
   (:body (content-upload-request
            "https://content.dropboxapi.com/2/files/upload_session/start"
            (io/as-file file)
            {})))
 
-(defn upload-append [file session-id offset]
+(defn- upload-append [file session-id offset]
   (content-upload-request
     "https://content.dropboxapi.com/2/files/upload_session/append_v2"
     (io/as-file file)
     {:cursor {:session_id session-id :offset offset}}))
 
-(defn upload-finish [file session-id offset path optional]
+(defn- upload-finish [file session-id offset path optional]
   (:body (content-upload-request
            "https://content.dropboxapi.com/2/files/upload_session/finish"
            (io/as-file file)
@@ -187,17 +189,17 @@
 (defn- MB [n]
   (* n 1048576))
 
-(defn byte-ranges [start end step]
+(defn- byte-ranges [start end step]
   (partition 2 1 (let [r (range start end step)]
                    (if (< (last r) end)
                      (concat r [end])
                      r))))
 
-(defn write-file-parts [^File file]
-  (let [ranges (byte-ranges 0 (.length file) (MB 10))]
+(defn- write-file-parts [^File file ^File dest-dir chunk-size-mb]
+  (let [ranges (byte-ranges 0 (.length file) (MB chunk-size-mb))]
     (with-open [raf (RandomAccessFile. file "r")]
       (doall (map-indexed (fn [i [start end]]
-                            (let [file-part (io/file (.getParent file) (str "part-" (format "%03d" i) "-" (str start)))
+                            (let [file-part (io/file dest-dir (str "part-" (format "%03d" i) "-" (str start)))
                                   buf (byte-array (- end start))]
                               (with-open [os (io/output-stream file-part)]
                                 (.seek raf start)
@@ -207,14 +209,34 @@
                           ranges)))))
 
 ;; Assert that there's at least two parts. You can't use this if there isn't.
-(defn upload-file-parts [path file-parts]
+(defn- upload-file-parts [file-parts path]
   (let [{:keys [session_id]} (upload-start (:file-part (first file-parts)))
         num-parts (count (rest file-parts))]
-    (last (map-indexed (fn [i {:keys [file-part offset]}]
-                         (if (not= (inc i) num-parts)
+    (last (map-indexed (fn [part-num {:keys [file-part offset]}]
+                         (if (not= (inc part-num) num-parts)
                            (upload-append file-part session_id offset)
                            (upload-finish file-part session_id offset path {})))
                        (rest file-parts)))))
+
+(defn- create-temp-dir [prefix]
+  (.toFile (Files/createTempDirectory prefix (into-array FileAttribute []))))
+
+(defn- delete-dir [dir]
+  (reduce #(and %1 %2)
+          (map #(.delete %) (reverse (file-seq dir)))))
+
+(defn- upload-parts [file path]
+  (let [work-dir (create-temp-dir "dropbox-repl")]
+    (try
+      (-> (write-file-parts file work-dir 10)
+          (upload-file-parts path))
+      (finally
+        (delete-dir work-dir)))))
+
+(defn upload [file path]
+  (if (< (.length file) (MB 150))
+    (upload-one file path)
+    (upload-parts file path)))
 
 ;;;;;;;;;;;;;;;;;;;; SHARING-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
 ;; https://www.dropbox.com/developers/documentation/http/documentation#sharing-add_folder_member
