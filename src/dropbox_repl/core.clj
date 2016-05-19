@@ -94,7 +94,7 @@
   (:body (rpc-request "https://api.dropboxapi.com/2/files/list_folder/continue"
                        {:cursor cursor})))
 
-(defn enhance-timestamps [entry & time-keywords]
+(defn parse-timestamps [entry & time-keywords]
   (reduce (fn [entry time-key]
             (let [dt (tf/parse (time-key entry))]
               (assoc entry (keyword (str (name time-key) "_dt")) dt)))
@@ -103,7 +103,7 @@
 
 (defn- enhance-entry [entry]
   (-> entry
-      (enhance-timestamps :client_modified :server_modified)))
+      (parse-timestamps :client_modified :server_modified)))
 
 ;; Hmm, don't think this is actually lazy...
 (defn list-entries-lazy
