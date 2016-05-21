@@ -84,7 +84,7 @@
         :else path))
 
 (defn list-folder
-  ([path] (list-folder path {}) )
+  ([path] (list-folder path {}))
   ([path optional]
    (let [params (merge {:path (sanitize-for-list path)} optional)]
      (:body (rpc-request "https://api.dropboxapi.com/2/files/list_folder"
@@ -273,5 +273,3 @@
 
 (defn name-from-path [path]
   (last (str/split path #"/")))
-
-
