@@ -105,26 +105,26 @@
   (-> entry
       (parse-timestamps :client_modified :server_modified)))
 
-;; Hmm, don't think this is actually lazy...
 (defn list-entries-lazy
-  "Lazily returns the entries given a path. The sequence
-  is terminated by nil so to get all of the entries you
-  would do (take-while some? (list-entries-lazy path))."
-  ([path] (list-entries-lazy path {:recursive true}))
-  ([path optional]
-   (let [init-results (list-folder path optional)
-         nil-entries {:entries [nil]}]
-     (mapcat :entries (iterate (fn [r]
-                                 (if (:has_more r)
-                                   (list-folder-continue (:cursor r))
-                                   nil-entries))
-                               init-results)))))
+  "Returns a lazy sequence of entries in a path. Probably
+  don't want to use this directly. Use list-entries instead
+  with the usual map, filter, take lazy functions."
+  ([path optional] (list-entries-lazy path optional nil))
+  ([path optional cursor]
+   (let [f (if (nil? cursor)
+             (fn [] (list-folder path optional))
+             (fn [] (list-folder-continue cursor)))
+         results (f)]
+     (when (seq (:entries results))
+       (lazy-cat (:entries results)
+                 (when (:has_more results)
+                   (list-entries-lazy path optional (:cursor results))))))))
 
 (defn list-entries
+  "A lazy sequence of all entries recursively given a path."
   ([path] (list-entries path {:recursive true}))
   ([path optional]
-   (->> (take-while some? (list-entries-lazy path optional))
-        (map enhance-entry))))
+   (map enhance-entry (list-entries-lazy path optional))))
 
 (defn copy [from-path to-path]
   (:body (rpc-request "https://api.dropboxapi.com/2/files/copy"
