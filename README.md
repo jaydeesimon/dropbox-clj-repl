@@ -1,8 +1,8 @@
 # Dropbox Clojure REPL
 
-I'm getting a lot of mileage out of my Dropbox account lately and it's working out great. Unfortunately, it's getting difficult to manage all of the crap that gets uploaded there.
+I'm getting a lot of mileage out of my Dropbox account lately and it's working out great. Unfortunately, it's getting difficult to manage all of the content that gets uploaded there.
 
-I'm envisioning this project as a starting point for helping me manage that crap.
+I'm envisioning this project as a starting point for helping me do that.
 
 # Usage
 
