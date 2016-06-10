@@ -52,13 +52,13 @@ Hopefully, it worked! If not, please contact me by opening an issue. I will be h
 
 * Sum the size of a directory
 
-```
+```clojure
 (reduce +' (map :size (list-entries "/Camera Uploads")))
 ```
 
 * Find the largest mp4s in your entire account
 
-```
+```clojure
 (sort-by :size > (filter #(clojure.string/ends-with? (:path_lower %) "mp4") (list-entries "/")))
 ```
 
