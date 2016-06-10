@@ -267,11 +267,11 @@
                         (merge {:url url} optional)))))
 
 ;;;;;;;;;;;;;;;;;;;; USEFUL FNS ;;;;;;;;;;;;;;;;;;;;;;
-(defn tag=? [tag entry]
+(defn tag= [tag entry]
   (= (:.tag entry) (name tag)))
 
 (defn file-type? [entry exts]
-  (and (tag=? :file entry)
+  (and (tag= :file entry)
        (some #(str/ends-with? (:path_lower entry) %) exts)))
 
 (defn image? [entry]
@@ -280,6 +280,10 @@
 
 (defn video? [entry]
   (let [exts [".mov" ".mp4" ".mpg" ".wmv" ".mkv" ".avi"]]
+    (file-type? entry exts)))
+
+(defn ebook? [entry]
+  (let [exts [".epub" ".mobi" ".azw" ".lit" ".odf"]]
     (file-type? entry exts)))
 
 (defn media? [entry]
