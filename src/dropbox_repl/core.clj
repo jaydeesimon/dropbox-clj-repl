@@ -77,7 +77,7 @@
 ;;;;;;;;;;;;;;;;;;;; FILES-RELATED ENDPOINTS ;;;;;;;;;;;;;;;;;;;;;;
 ;; https://www.dropbox.com/developers/documentation/http/documentation#files-copy
 
-(defn- sanitize-for-list [path]
+(defn- sanitize [path]
   (cond (= "/" path) ""
         (= "" path) ""
         (not (str/starts-with? path "/")) (str "/" path)
@@ -86,7 +86,7 @@
 (defn list-folder
   ([path] (list-folder path {}))
   ([path optional]
-   (let [params (merge {:path (sanitize-for-list path)} optional)]
+   (let [params (merge {:path (sanitize path)} optional)]
      (:body (rpc-request "https://api.dropboxapi.com/2/files/list_folder"
                           params)))))
 
@@ -148,7 +148,7 @@
 (defn search
   ([path query] (search path query {}))
   ([path query optional]
-   (let [params (merge {:path path :query query} optional)]
+   (let [params (merge {:path (sanitize path) :query query} optional)]
      (:body (rpc-request "https://api.dropboxapi.com/2/files/search"
                           params)))))
 
