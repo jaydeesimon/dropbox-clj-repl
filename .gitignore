@@ -12,4 +12,3 @@ pom.xml.asc
 .idea/
 *.iml
 profiles.clj
-/src/dropbox_repl/workspace.clj
