@@ -96,8 +96,9 @@
 
 (defn parse-timestamps [entry & time-keywords]
   (reduce (fn [entry time-key]
-            (let [dt (tf/parse (time-key entry))]
-              (assoc entry (keyword (str (name time-key) "_dt")) dt)))
+            (if-let [dt (tf/parse (time-key entry))]
+              (assoc entry (keyword (str (name time-key) "_dt")) dt)
+              entry))
           entry
           time-keywords))
 

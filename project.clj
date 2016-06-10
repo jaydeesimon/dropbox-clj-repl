@@ -1,6 +1,6 @@
 (defproject dropbox-repl "0.1.0"
   :description "Dropbox Clojure REPL"
-  :url "http://example.com/FIXME"
+  :url "https://github.com/jaydeesimon/dropbox-clj-repl"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
