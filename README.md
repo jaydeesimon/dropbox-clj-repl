@@ -1,10 +1,41 @@
 # Dropbox Clojure REPL
 
-I'm getting a lot of mileage out of my Dropbox account lately and it's working out great. Unfortunately, it's getting difficult to manage all of the content that gets uploaded there.
-
-I'm envisioning this project as a starting point for helping me do that.
+A Clojure library designed to maximize your Dropbox account usage from a REPL.
 
 # Usage
+* Create a Dropbox account, if you don't already have one and generate an access token. See **How to Create an Access Token** below.
+* In your project.clj, add the dropbox-repl dependency. The latest version is
+```
+[dropbox-repl "0.1.0"]
+```
+* In your project.clj, add the lein-environ plugin. Your project.clj should look something like this:
+
+```clojure
+(defproject example-dropbox-scripts "0.1.0-SNAPSHOT"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [dropbox-repl "0.1.0"]]
+  :plugins [[lein-environ "1.0.3"]])
+```
+* Create a file called **profiles.clj** in the root directory of your project with the following contents.
+
+```
+{:dev {:env {:access-token "YOUR_64_CHAR_GENERATED_DROPBOX_ACCESS_TOKEN_GOES_HERE"}}}
+```
+Now let's see if it worked. In the root of the project directory, start a REPL using Leiningen and try to execute the **(get-current-account)** function. See below.
+
+```
+$ lein repl
+
+dropbox-repl.core=> (get-current-account)
+{:email "tismyemail@gmail.com", :account_type {:.tag "pro"}, :disabled false, :account_id "dbid:AACS-nNMCgsomedropboxidmkB9skqsx1Y", :is_paired false, :locale "en", :name {:given_name "Jeffrey", :surname "Simon", :familiar_name "Jeffrey", :display_name "Jeffrey Simon"}, :email_verified true, :referral_link "https://db.tt/tismyreferrallink", :country "US"}
+```
+
+Hopefully, it worked! If not, please contact me by opening an issue. I will be happy to help.
+
+
+# How to Create an Access Token
 
 0. Create a Dropbox account. Better instructions with pictures to come!
 1. [Create an app on Dropbox](https://www.dropbox.com/developers/apps). 
@@ -15,22 +46,7 @@ I'm envisioning this project as a starting point for helping me do that.
 3. After you've created the app, select it, and go to the **Settings** tab.
 4. Find the **OAuth 2** subsection and in that section there should be something named **Generated access token** with a button labeled **Generate**.
 5. Press the **Generate** button which should yield a string of 64 characters.
-6. Create a file called **profiles.clj** (it will not be tracked by git) in the root dir of the project and add the following contents. Make sure to substitute in your access token.
 
-```
-{:dev {:env {:access-token "YOUR_64_CHAR_GENERATED_DROPBOX_ACCESS_TOKEN_GOES_HERE"}}}
-```
-
-Now let's see if it worked. In the root of the project directory, start a REPL using Leiningen and try to execute the **(get-current-account)** function. See below.
-
-```
-$ lein repl
-
-dropbox-repl.core=> (get-current-account)
-{:email "tismyemail@gmail.com", :account_type {:.tag "pro"}, :disabled false, :account_id "dbid:AACS-nNMCgsomedropboxidmkB9skqsx1Y", :is_paired false, :locale "en", :name {:given_name "Jeffrey", :surname "Simon", :familiar_name "Jeffrey", :display_name "Jeffrey Simon"}, :email_verified true, :referral_link "https://db.tt/tismyreferrallink", :country "US"}
-```
-
-Hopefully, it worked for you!
 
 # Examples
 
