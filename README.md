@@ -20,7 +20,7 @@ A Clojure library designed to maximize your Dropbox account usage from a REPL.
 ```
 * Create a file called **profiles.clj** in the root directory of your project with the following contents.
 
-```
+```clojure
 {:dev {:env {:access-token "YOUR_64_CHAR_GENERATED_DROPBOX_ACCESS_TOKEN_GOES_HERE"}}}
 ```
 Now let's see if it worked. In the root of the project directory, start a REPL using Leiningen and try to execute the **(get-current-account)** function. See below.
