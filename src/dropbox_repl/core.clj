@@ -267,9 +267,23 @@
                         (merge {:url url} optional)))))
 
 ;;;;;;;;;;;;;;;;;;;; USEFUL FNS ;;;;;;;;;;;;;;;;;;;;;;
-(defn tag= [tag]
-  (fn [e]
-    (= (:.tag e) (name tag))))
+(defn tag=? [tag entry]
+  (= (:.tag entry) (name tag)))
+
+(defn file-type? [entry exts]
+  (and (tag=? :file entry)
+       (some #(str/ends-with? (:path_lower entry) %) exts)))
+
+(defn image? [entry]
+  (let [exts [".tif" ".tiff" ".gif" ".jpeg" ".jpg" ".png"]]
+    (file-type? entry exts)))
+
+(defn video? [entry]
+  (let [exts [".mov" ".mp4" ".mpg" ".wmv" ".mkv" ".avi"]]
+    (file-type? entry exts)))
+
+(defn media? [entry]
+  (or (image? entry) (video? entry)))
 
 (defn name-from-path [path]
   (last (str/split path #"/")))
