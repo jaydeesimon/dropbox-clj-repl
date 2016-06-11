@@ -8,6 +8,8 @@
                  [cheshire "5.6.1"]
                  [environ "1.0.3"]
                  [clj-time "0.11.0"]]
+  :deploy-repositories [["releases" {:url "https://clojars.org/repo"
+                                     :sign-releases false}]]
   :plugins [[lein-environ "1.0.3"]]
   :main ^:skip-aot dropbox-repl.core
   :target-path "target/%s"
