@@ -15,7 +15,7 @@ A Clojure library designed to maximize your Dropbox account usage from a REPL.
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [dropbox-repl "0.1.0"]]
+                 [com.jaydeesimon/dropbox-repl "0.1.0"]]
   :plugins [[lein-environ "1.0.3"]])
 ```
 * Create a file called **profiles.clj** in the root directory of your project with the following contents.
@@ -25,7 +25,7 @@ A Clojure library designed to maximize your Dropbox account usage from a REPL.
 ```
 Now let's see if it worked. In the root of the project directory, start a REPL using Leiningen and try to execute the **(get-current-account)** function. See below.
 
-```
+```sh
 $ lein repl
 
 dropbox-repl.core=> (get-current-account)
