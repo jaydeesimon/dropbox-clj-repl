@@ -65,4 +65,5 @@ Hopefully, it worked! If not, please contact me by opening an issue. I will be h
 Feel free to pass on some more useful snippets.
 
 # Future Work
-I spit this project out in a day so I'm sure there's much more you could do with it. There are a lot of API endpoints that are not included but that's mostly because I didn't find them useful for my own needs. There's no reason they can't be added in the future. Feel free to send me pull requests.
+
+There are a lot of API endpoints that are not included but that's mostly because I didn't find them useful for my own needs. Hopefully, it's easy to add new ones and please feel free to send me pull requests.
