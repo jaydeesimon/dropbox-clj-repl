@@ -11,14 +11,14 @@
            (java.nio.file.attribute FileAttribute)
            (java.nio.file Files)))
 
-;;; Follow the instructions in the Github page on how
+;;; Follow the instructions in the GitHub page on how
 ;;; to generate an access token for your Dropbox REPL.
 ;;; Then put the value of your token in the profiles.clj.
 (def access-token (env :access-token))
 
 (assert access-token
         "Access token is nil. Please follow the usage instructions on the
-        GitHub page at https://github.com/jaydeesimon/dropbox-clj-repl")
+        GitHub page at https://github.com/jaydeesimon/dropbox-repl")
 
 (defn- merge*
   "Deep-merge a list of maps."
