@@ -3,7 +3,7 @@
 A Clojure library designed to maximize your Dropbox account usage from a REPL.
 
 # Usage
-* Create a Dropbox account, if you don't already have one and generate an access token. See [**How to Create an Access Token**](#How-to-Create-an-Access-Token) below.
+* Create a Dropbox account, if you don't already have one and generate an access token. See [**How to Create an Access Token**](#how-to-create-an-access-token) below.
 * In your project.clj, add the dropbox-repl dependency. The latest version is
 ```
 [com.jaydeesimon/dropbox-repl "0.1.0"]
