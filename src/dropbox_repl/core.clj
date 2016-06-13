@@ -5,7 +5,8 @@
             [clj-time.format :as tf]
             [clj-http.client :refer [post]]
             [cheshire.core :refer [parse-string generate-string]]
-            [clojure.walk :refer [keywordize-keys]])
+            [clojure.walk :refer [keywordize-keys]]
+            [dropbox-repl.util :as util])
   (:gen-class)
   (:import (java.io File RandomAccessFile)
            (java.nio.file.attribute FileAttribute)
@@ -148,6 +149,25 @@
   (:body (rpc-request "https://api.dropboxapi.com/2/files/move"
                        {:from_path from-path
                         :to_path   to-path})))
+
+(defn op-file-to-folder [op file-path folder-path]
+  (let [filename (util/name-from-path file-path)
+        dest (util/append folder-path filename)]
+    (op file-path dest)))
+
+(defn move-file-to-folder
+  "Given a path to a file, moves it to a folder,
+  keeping the same name. If the destination folder
+  does not exist, it will be created."
+  [file-path folder-path]
+  (op-file-to-folder move file-path folder-path))
+
+(defn copy-file-to-folder
+  "Given a path to a file, copies it to a folder,
+  keeping the same name. If the destination folder
+  does not exist, it will be created."
+  [file-path folder-path]
+  (op-file-to-folder copy file-path folder-path))
 
 (defn search
   ([path query] (search path query {}))
@@ -294,5 +314,4 @@
 (defn media? [entry]
   (or (image? entry) (video? entry)))
 
-(defn name-from-path [path]
-  (last (str/split path #"/")))
+
