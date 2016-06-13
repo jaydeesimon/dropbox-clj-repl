@@ -6,7 +6,7 @@ A Clojure library designed to maximize your Dropbox account usage from a REPL.
 * Create a Dropbox account, if you don't already have one and generate an access token. See [**How to Create an Access Token**](#how-to-create-an-access-token) below.
 * In your project.clj, add the dropbox-repl dependency. The latest version is
 ```
-[com.jaydeesimon/dropbox-repl "0.1.0"]
+[com.jaydeesimon/dropbox-repl "0.1.1"]
 ```
 * In your project.clj, add the lein-environ plugin. Your project.clj should look something like this:
 
@@ -15,7 +15,7 @@ A Clojure library designed to maximize your Dropbox account usage from a REPL.
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [com.jaydeesimon/dropbox-repl "0.1.0"]]
+                 [com.jaydeesimon/dropbox-repl "0.1.1"]]
   :plugins [[lein-environ "1.0.3"]])
 ```
 * Create a file called **profiles.clj** in the root directory of your project with the following contents.
