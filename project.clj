@@ -1,4 +1,4 @@
-(defproject com.jaydeesimon/dropbox-repl "0.1.0"
+(defproject com.jaydeesimon/dropbox-repl "0.1.1"
   :description "Dropbox Clojure REPL"
   :url "https://github.com/jaydeesimon/dropbox-clj-repl"
   :license {:name "Eclipse Public License"
